@@ -1,0 +1,396 @@
+#:import from_hex kivy.utils.get_color_from_hex
+#:import colormap kivy.utils.colormap
+#:import dp kivy.metrics.dp
+#:import math math
+
+#:set main_color "#F3AF12"
+#:set main_color_dark "#D95F02"
+#:set button_text "#241A0B"
+#:set button_shadow "#9A4A08"
+#:set button_play "#b8810b"
+
+
+<CircularTimer@FloatLayout>:
+    max_time: 10
+    time_left: 10
+    
+    canvas.before:
+        # 1. Тло кільця (напівпрозоре темно-сіре)
+        Color:
+            rgba: 0.2, 0.2, 0.2, 0.4
+        Line:
+            circle: (self.center_x, self.center_y, min(self.width, self.height) / 2, 0, 360)
+            width: dp(5)
+            
+        # 2. Активне кільце, що зменшується та змінює колір
+        Color:
+            rgba: (1 - (self.time_left / self.max_time), self.time_left / self.max_time, 0.1, 1) if self.max_time > 0 else (1, 0, 0, 1)
+        Line:
+            # Кут дуги зменшується від 360 до 0
+            circle: (self.center_x, self.center_y, min(self.width, self.height) / 2, 0, 360 * (self.time_left / self.max_time) if self.max_time > 0 else 0)
+            width: dp(5)
+            cap: "round"
+
+    # 3. Текст із відліком всередині кільця
+    Label:
+        text: str(math.ceil(root.time_left)) if root.time_left > 0 else "0"
+        font_name: 'assets/fonts/Fredoka-Regular.ttf'  # Використовуй свій шрифт
+        font_size: root.height * 0.4
+        bold: True
+        pos_hint: {"center_x": 0.5, "center_y": 0.5}
+        # Колір тексту також синхронізовано з кольором кільця
+        color: (1 - (root.time_left / root.max_time), root.time_left / root.max_time, 0.1, 1) if root.max_time > 0 else (1, 0, 0, 1)
+
+# Власний дизайн шкали здоров'я
+<HealthBar@Widget>:
+    max_hp: 100
+    hp: 100
+    
+    canvas.before:
+        # 1. Тло шкали (темно-сіра підкладка)
+        Color:
+            rgba: 0.2, 0.2, 0.2, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [12]
+            
+        # 2. Червона смуга здоров'я
+        Color:
+            rgba: 0.9, 0.2, 0.2, 1
+        RoundedRectangle:
+            pos: self.pos
+            # Вираховуємо ширину смуги: (поточне hp / макс hp) * загальну ширину
+            size: (self.width * (self.hp / self.max_hp) if self.max_hp > 0 else 0, self.height)
+            radius: [12]
+
+<FloatingText>:
+    font_name: 'assets/fonts/Fredoka-Regular.ttf'
+    font_size: "28sp"
+    bold: True
+    color: 1, 0.2, 0.2, 1  # Світло-червоний колір
+    size_hint: None, None
+    size: self.texture_size
+
+<Label>:
+    font_name: 'assets/fonts/Fredoka-Regular.ttf'
+
+<Button>:
+    font_name: 'assets/fonts/Fredoka-Regular.ttf'
+
+
+# Спільний стиль кнопок меню
+<ButtonMenu@Button>:
+    font_size: "19sp"
+    bold: True
+    size_hint: 1, 0.14
+    height: "58dp"
+    padding: "18dp", 0
+    background_normal: ''
+    background_color: 0, 0, 0, 0
+    color: from_hex(button_text)
+
+    canvas.before:
+        Color:
+            rgba: from_hex(button_shadow)
+        RoundedRectangle:
+            pos: self.x, self.y - (dp(4) if self.state == "normal" else dp(1))
+            size: self.size
+            radius: [14, 14, 14, 14]
+        Color:
+            rgba: from_hex(main_color_dark if self.state == "down" else main_color)
+        RoundedRectangle:
+            pos: self.x, self.y + (dp(2) if self.state == "down" else 0)
+            size: self.size
+            radius: [14, 14, 14, 14]
+
+    canvas.after:
+        Color:
+            rgba: 1, 1, 1, 0.22
+        Line:
+            rounded_rectangle: self.x + dp(1), self.y + dp(1), self.width - dp(2), self.height - dp(2), 14
+            width: 1.1
+
+<ButtonIcon@ButtonMenu>:
+    font_name: "assets/fonts/typicons.ttf"
+    font_size: "40sp"
+    size_hint: None, None
+    size: 80, 80
+
+    
+<Target>:
+    source: "assets/images/balloon.png"
+    allow_stretch: True
+    opacity: 0
+
+<MenuScreen>:
+    canvas.before:
+        # Додаємо картинку фону
+        Rectangle:
+            pos: self.pos
+            size: self.size
+            source: "assets/images/bg.jpg"
+
+    BoxLayout:
+        orientation: "vertical"
+        padding: "28dp"
+        spacing: "16dp"
+
+        Label:
+            text: 'READY \nTO TAP?'
+            font_name: 'assets/fonts/LilitaOne-Regular.ttf'
+            font_size: "30sp"  # Робимо заголовок значно більшим
+            bold: True
+            color: 1, 0.8, 0.1, 1  # Яскравий золотисто-жовтий колір
+            outline_color: 0, 0, 0, 1  # Суцільна чорна обводка
+            outline_width: dp(2)  # Товщина обводки (регулюй за потребою)
+            size_hint: 1, 0.2
+        
+        BoxLayout:
+            orientation: "horizontal"
+            size_hint: None, None
+            height: "80dp"  # Висота відповідає розміру твоїх ButtonIcon
+            width: self.minimum_width  # Блок стискається по ширині до розміру кнопок
+            pos_hint: {"center_x": 0.5}  # Центруємо весь блок на екрані
+            spacing: "20dp"  # Відстань між кнопками
+            ButtonIcon:
+                text: "\ue050"
+                font_size: "30sp"
+                on_press: root.go_settings()
+
+            ButtonIcon:
+                text: "\ue0ad"
+                font_size: "30sp"
+                width: 100
+                on_press: root.go_game()
+
+            ButtonIcon:
+                text: "\ue00d"
+                font_size: "30sp"
+                on_press: root.exit_app()
+
+
+
+
+<GameScreen>:
+    canvas.before:
+        Rectangle:
+            pos: self.pos
+            size: self.size
+            # Окремий фон саме для процесу гри
+            source: "assets/images/game.jpg"
+    FloatLayout:
+        padding: "20dp"
+
+        HealthBar:
+            max_hp: monster.max_hp
+            hp: monster.hp
+            size_hint: 0.7, None
+            height: "28dp"
+            pos_hint: {"center_x": 0.5, "top": 0.95}
+
+        # Текст із цифрами поверх шкали (за бажанням)
+        Label:
+            text: f"{int(monster.hp)} / {int(monster.max_hp)}"
+            font_size: "18sp"
+            bold: True
+            size_hint: 0.7, None
+            height: "28dp"
+            pos_hint: {"center_x": 0.5, "top": 0.95}
+        
+        Target:
+            id: monster
+            size_hint: 0.7, 0.4
+            pos_hint: {"center_x": 0.5, "center_y": 0.5}
+            on_death: root.level_complete()
+        Label:
+            id: level_popup
+            text: ""
+            font_name: 'assets/fonts/LilitaOne-Regular.ttf'
+            font_size: "60sp"
+            bold: True
+            color: 1, 0.8, 0.1, 1  # Золотистий колір
+            outline_color: 0, 0, 0, 1  # Суцільна чорна обводка
+            outline_width: dp(4)  # Товщина обводки (регулюй за потребою)
+            opacity: 0
+            pos_hint: {"center_x": 0.5, "center_y": 0.6}
+
+        ButtonIcon:
+            text: "\ue08a"
+            font_size: "30sp"
+            pos_hint: {'x': 0.05, 'y': 0.05}
+            on_press: root.go_menu()
+
+        CircularTimer:
+            max_time: root.max_time
+            time_left: root.time_left
+            size_hint: None, None
+            size: "60dp", "60dp"
+            pos_hint: {"center_x": 0.5, "y": 0.05}  # У лівому верхньому куті
+
+<SettingsScreen>:
+    canvas.before:
+        Rectangle:
+            pos: self.pos
+            size: self.size
+            source: "assets/images/bg.jpg"
+            
+    BoxLayout:
+        orientation: "vertical"
+        padding: "20dp"
+        spacing: "15dp"
+
+        # --- 1. Заголовок ---
+        Label:
+            text: "SETTINGS"
+            font_size: "20sp"
+            bold: True
+            color: 1, 0.8, 0.1, 1  
+            outline_color: 0, 0, 0, 1  
+            outline_width: dp(4)
+            size_hint: 1, 0.15
+
+        # --- 2. Рядок звукових ефектів ---
+        BoxLayout:
+            orientation: "horizontal"
+            size_hint: 0.85, 0.15
+            pos_hint: {"center_x": 0.5}
+            
+            Label:
+                text: "Sounds:"
+                font_size: "10sp"
+                bold: True
+                color: 1, 1, 1, 1  
+                outline_color: 0, 0, 0, 1
+                outline_width: dp(2)
+                size_hint_x: 0.4
+                halign: "left"
+                valign: "middle"
+                text_size: self.size
+                
+            Switch:
+                active: app.sounds_enabled
+                on_active: app.toggle_sounds(self.active)
+                size_hint_x: 0.6
+
+        # --- 3. Повзунок гучності музики ---
+        BoxLayout:
+            orientation: "horizontal"
+            size_hint: 0.85, 0.15
+            pos_hint: {"center_x": 0.5}
+            
+            Label:
+                text: "Music:"
+                font_size: "10sp"
+                bold: True
+                color: 1, 1, 1, 1
+                outline_color: 0, 0, 0, 1
+                outline_width: dp(2)
+                size_hint_x: 0.4
+                halign: "left"
+                valign: "middle"
+                text_size: self.size
+            
+            Slider:
+                min: 0
+                max: 1
+                value: 0.5
+                size_hint_x: 0.6
+                on_value: app.set_music_volume(self.value)
+                value_track: True
+                value_track_color: 1, 0.8, 0.1, 1  
+                cursor_size: dp(20), dp(20)  
+
+        # --- 4. Карусель вибору складності ---
+        BoxLayout:
+            orientation: "horizontal"
+            size_hint: 0.9, 0.25
+            pos_hint: {"center_x": 0.5}
+            
+            Button:
+                text: "<"
+                font_size: "35sp"
+                bold: True
+                background_normal: ''
+                background_color: 0, 0, 0, 0
+                color: 1, 1, 1, 1  
+                outline_color: 0, 0, 0, 1
+                outline_width: dp(3)
+                size_hint_x: 0.2
+                on_press: difficulty_carousel.load_previous()
+
+            Carousel:
+                id: difficulty_carousel
+                direction: 'right'
+                index: 1  
+                on_index: app.set_difficulty(self.index)
+                size_hint_x: 0.6
+                
+                Label:
+                    text: "EASY"
+                    markup: True
+                    font_size: "14sp"
+                    bold: True
+                    color: 0.4, 1, 0.4, 1  
+                    outline_color: 0, 0, 0, 1
+                    outline_width: dp(2)
+                    halign: "center"
+                
+                Label:
+                    text: "NORMAL"
+                    markup: True
+                    font_size: "14sp"
+                    bold: True
+                    color: 1, 0.8, 0.1, 1  
+                    outline_color: 0, 0, 0, 1
+                    outline_width: dp(2)
+                    halign: "center"
+                    
+                Label:
+                    text: "HARD"
+                    markup: True
+                    font_size: "14sp"
+                    bold: True
+                    color: 1, 0.3, 0.3, 1  
+                    outline_color: 0, 0, 0, 1
+                    outline_width: dp(2)
+                    halign: "center"
+
+            Button:
+                text: ">"
+                font_size: "35sp"
+                bold: True
+                background_normal: ''
+                background_color: 0, 0, 0, 0
+                color: 1, 1, 1, 1
+                outline_color: 0, 0, 0, 1
+                outline_width: dp(3)
+                size_hint_x: 0.2
+                on_press: difficulty_carousel.load_next()
+
+        # --- 5. Кнопки управління ---
+        BoxLayout:
+            orientation: "horizontal"
+            size_hint: 0.85, 0.15
+            pos_hint: {"center_x": 0.5}
+            spacing: "15dp"  
+            
+            ButtonMenu:
+                text: "RESET"
+                font_size: "18sp"
+                size_hint_y: None
+                height: "40dp"
+                pos_hint: {"center_y": 0.5}
+                color: 1, 0.3, 0.3, 1 
+                outline_color: 0.4, 0, 0, 1
+                outline_width: dp(2)
+                on_press: root.reset_progress()
+
+            ButtonIcon:
+                text: "\ue08a"
+                font_size: "20sp"
+                # Жорстко задаємо розмір 60x60, щоб іконка була такої ж висоти, як і кнопка RESET
+                size_hint: None, None
+                size: "40dp", "40dp"
+                pos_hint: {"center_y": 0.5}
+                on_press: root.go_menu()
