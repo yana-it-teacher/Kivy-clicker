@@ -1,4 +1,6 @@
 [app]
+# Використовувати найновішу гілку python-for-android
+p4a.branch = master
 # Назва гри
 title = Jungle Clicker
 
