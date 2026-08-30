@@ -34,7 +34,7 @@ jobs:
                 yes | sdkmanager --licenses || true; \
                 sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"; \
               fi; \
-              buildozer android debug 2>&1 | tee buildozer.log'
+               yes | buildozer android debug 2>&1 | tee buildozer.log'
 
       - name: Debug list workspace files
         run: |
