@@ -27,7 +27,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           pip install --upgrade pip
-          pip install buildozer cython virtualenv
+          pip install buildozer "cython<3.0.0" virtualenv wheel setuptools
 
       - name: Build APK with Buildozer
         # Команда yes автоматически принимает лицензионные соглашения Android SDK
