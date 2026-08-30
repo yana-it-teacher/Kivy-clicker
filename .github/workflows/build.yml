@@ -1,61 +1,40 @@
-name: Build Android APK
+name: Build Kivy APK
 
+# Запуск сборки при пуше в ветку main (можно изменить на master)
 on:
   push:
     branches: [ main ]
-  pull_request:
+  workflow_dispatch: # Позволяет запускать сборку вручную из интерфейса GitHub
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build-android:
+    runs-on: ubuntu-22.04
+
     steps:
-      - name: Check out repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Cache downloaded Android SDK
-        uses: actions/cache@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          path: |
-            ${{ github.workspace }}/.buildozer/android/platform
-            ${{ github.workspace }}/.buildozer/android/platform/android-sdk
-          key: ${{ runner.os }}-android-sdk-${{ hashFiles('**/buildozer.spec') }}
+          python-version: '3.10'
 
-      - name: Build debug APK
+      - name: Install system dependencies
         run: |
-          set -o pipefail
-          docker run --rm \
-            --entrypoint /bin/bash \
-            --volume "${{ github.workspace }}:/home/user/hostcwd" \
-            --workdir /home/user/hostcwd \
-            ghcr.io/kivy/buildozer:latest -lc '\
-              set -e; \
-              export BUILDOZER_ALLOW_ROOT=1; \
-              if command -v sdkmanager >/dev/null 2>&1; then \
-                yes | sdkmanager --licenses || true; \
-                sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"; \
-              fi; \
-               yes | buildozer android debug 2>&1 | tee buildozer.log'
+          sudo apt-get update
+          sudo apt-get install -y git zip unzip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libncursesw5-dev libtinfo5 cmake libffi-dev libssl-dev default-jdk
 
-      - name: Debug list workspace files
+      - name: Install Python dependencies
         run: |
-          echo "Workspace: $GITHUB_WORKSPACE"
-          ls -la "$GITHUB_WORKSPACE" || true
-          echo "Find any APKs:"
-          find "$GITHUB_WORKSPACE" -type f -name '*.apk' -print || true
-          echo "buildozer.log (last 200 lines):"
-          tail -n 200 buildozer.log || true
+          pip install --upgrade pip
+          pip install buildozer cython virtualenv
+
+      - name: Build APK with Buildozer
+        # Команда yes автоматически принимает лицензионные соглашения Android SDK
+        run: yes | buildozer android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: jungle-clicker-apk
-          path: |
-            **/*.apk
-
-      - name: Upload buildozer log
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: buildozer-log
-          path: buildozer.log
+          name: app-debug
+          path: bin/*.apk
