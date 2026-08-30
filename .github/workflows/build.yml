@@ -26,20 +26,17 @@ jobs:
           docker run --rm \
             --entrypoint /bin/bash \
             --volume "${{ github.workspace }}:/home/user/hostcwd" \
-            --workdir /home/user/hostcwd" \
+            --workdir /home/user/hostcwd \
             ghcr.io/kivy/buildozer:latest -lc '\
               set -e; \
-              # allow buildozer to run as root in CI non-interactively:
               export BUILDOZER_ALLOW_ROOT=1; \
-              # Accept SDK licenses and install if sdkmanager exists:
               if command -v sdkmanager >/dev/null 2>&1; then \
                 yes | sdkmanager --licenses || true; \
                 sdkmanager "platform-tools" "platforms;android-33" "build-tools;33.0.2"; \
               fi; \
-              # run buildozer and capture its output to buildozer.log
               buildozer android debug 2>&1 | tee buildozer.log'
 
-      - name: Debug: list workspace files
+      - name: Debug list workspace files
         run: |
           echo "Workspace: $GITHUB_WORKSPACE"
           ls -la "$GITHUB_WORKSPACE" || true
